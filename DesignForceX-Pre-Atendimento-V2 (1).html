@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DesignForceX - Pré-Atendimento</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    :root{--bg:#000;--neon:#06b6d4;--muted:#cbd5e1;}
+    html,body{height:100%;}
+    body{background:radial-gradient(ellipse at top right, rgba(6,182,212,0.06), transparent 20%), var(--bg);color:white;font-family:Inter,ui-sans-serif,system-ui;}
+    .card{background:rgba(255,255,255,0.02);border:1px solid rgba(6,182,212,0.08);backdrop-filter:blur(6px);box-shadow:0 8px 30px rgba(2,6,23,0.7);border-radius:1rem;}
+    .bubble{max-width:78%;padding:14px 18px;border-radius:14px;margin:8px 0;line-height:1.25;box-shadow:0 6px 18px rgba(2,6,23,0.6) inset;}
+    .bot{background:rgba(8,145,178,0.12);border:1px solid rgba(6,182,212,0.12);color:var(--muted);}
+    .me{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.03);color:#e6eef6;align-self:flex-end;}
+    .neon{color:var(--neon);text-shadow:0 4px 20px rgba(6,182,212,0.12);}
+    .typing{width:12px;height:12px;margin-right:8px;border-radius:50%;display:inline-block;background:linear-gradient(90deg,var(--neon),rgba(255,255,255,0.4));animation:blink 1s infinite;}
+    @keyframes blink{0%{opacity:0.2}50%{opacity:1}100%{opacity:0.2}}
+    .fade-in{animation:fadeIn .42s ease both;}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+    .glass-input{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:12px 14px;border-radius:10px;color:inherit;outline:none}
+    .btn-neon{background:rgba(6,182,212,0.14);border:1px solid rgba(6,182,212,0.18);padding:10px 14px;border-radius:10px;color:var(--neon);font-weight:600}
+    .pulse{animation:pulse 1.6s infinite;}
+    @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.02)}100%{transform:scale(1)}}
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6">
+  <main class="w-full max-w-2xl">
+    <section class="card p-6 md:p-8">
+      <header class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-black to-gray-800 flex items-center justify-center border border-gray-800">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" class="neon"><path d="M12 2v20M2 12h20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <div class="text-sm text-gray-300">DesignForceX</div>
+            <div class="text-xs text-gray-400">Pré-Atendimento Interativo</div>
+          </div>
+        </div>
+      </header>
+      <div id="chat" class="flex flex-col gap-2 h-96 overflow-y-auto p-3 rounded-lg"></div>
+      <div id="controls" class="mt-4">
+        <form id="inputForm" class="flex gap-2">
+          <input id="userInput" autocomplete="off" class="glass-input flex-1" placeholder="Digite aqui..." />
+          <button id="sendBtn" type="submit" class="btn-neon">Enviar</button>
+        </form>
+      </div>
+    </section>
+    <footer class="mt-4 text-center text-xs text-gray-500">Feito com ♥ por DesignForceX</footer>
+  </main>
+
+  <script>
+    const flow=[
+      {id:1,text:`Olá! Tudo bem?\nEu sou o assistente virtual do DesignForceX, designer que te ajuda a vender!!!\nAntes de começarmos, qual o seu nome?`,placeholder:'Digite seu nome aqui'},
+      {id:2,text:(s)=>`Perfeito, ${s.name}!\nO DesignForceX ajuda marcas e negócios a atraírem clientes com posts e visuais limpos que fazem vender.\nNosso trabalho é internacional — atendemos clientes dentro e fora do seu país de origem.`},
+      {id:3,text:`Agora que fiz essa breve introdução, vamos ao que realmente importa:\nQual o serviço que você está procurando?`,placeholder:'Ex: identidade visual, posts para redes, cardápio, etc.'},
+      {id:4,text:(s)=>`Perfeito! Vou te encaminhar o link do WhatsApp dele.\nOu, se preferir, envie uma mensagem em sua DM do Instagram.\n\nClique no botão para iniciar.`,end:true}
+    ];
+
+    const chat=document.getElementById('chat');
+    const input=document.getElementById('userInput');
+    const form=document.getElementById('inputForm');
+    const send=document.getElementById('sendBtn');
+    let i=0;let state={name:'',service:''};
+
+    function msg(t,w='bot'){const d=document.createElement('div');d.className='flex '+(w==='me'?'justify-end':'justify-start');const b=document.createElement('div');b.className='bubble '+(w==='me'?'me':'bot')+' fade-in';t.split('\n').forEach(l=>{const p=document.createElement('div');p.innerText=l;b.appendChild(p)});d.appendChild(b);chat.appendChild(d);chat.scrollTop=chat.scrollHeight;}
+
+    function typing(){const d=document.createElement('div');d.className='flex';const b=document.createElement('div');b.className='bubble bot';b.innerHTML='<span class="typing"></span><span class="typing"></span><span class="typing"></span>';d.appendChild(b);chat.appendChild(d);chat.scrollTop=chat.scrollHeight;return d;}
+
+    function next(auto=false){
+      const c=flow[i];if(!c)return;
+      const t=typing();
+      setTimeout(()=>{
+        t.remove();
+        const txt=typeof c.text==='function'?c.text(state):c.text;
+        msg(txt,'bot');
+        input.value='';input.placeholder=c.placeholder||'Digite aqui...';
+        if(c.end)final();
+        if(auto){i++;setTimeout(next,800);} // auto chain
+      },700);
+    }
+
+    function final(){
+      document.getElementById('controls').innerHTML='<a class="btn-neon pulse" href="https://wa.me/5561984272752?text=Olá!+Cheguei+através+do+site+DesignForceX+e+quero+iniciar+meu+projeto." target="_blank">🌙 Quero iniciar meu projeto</a>';
+    }
+
+    form.addEventListener('submit',e=>{
+      e.preventDefault();
+      const v=input.value.trim();const c=flow[i];
+      if(!v)return;
+      msg(v,'me');
+      if(c.id===1)state.name=v;
+      if(c.id===3)state.service=v;
+      i++;
+      // After step 1, show step 2 then automatically step 3
+      if(c.id===1){setTimeout(()=>{next(true)},300);}
+      else{setTimeout(next,300);}
+    });
+
+    window.addEventListener('load',()=>setTimeout(next,300));
+    input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send.click();}});
+  </script>
+</body>
+</html>
